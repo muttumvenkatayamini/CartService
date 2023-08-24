@@ -1,12 +1,17 @@
 package com.cartServicet.demo.Service;
 
-import java.util.List;
+import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+/**
+ * 
+ * @author muttum.venkatayamini
+ *
+ */
 import com.cartServicet.demo.CartDto.CartDtoResponse;
 import com.cartServicet.demo.CartDto.Cartdto;
+import com.cartServicet.demo.CartDto.DeleteProductDto;
 import com.cartServicet.demo.CartDto.ProductDto;
 import com.cartServicet.demo.CartDto.ProductResponseDto;
 import com.cartServicet.demo.Entity.CartEntity;
@@ -22,20 +27,24 @@ public class Cartserviceimpl implements CartService {
 
 	@Autowired
 	private ProductRepo productRepo;
-	
-	
 
 	@Override
+
 	public CartDtoResponse createCart(Cartdto cartDto) {
-	CartEntity cart = new CartEntity();
-		cart.setUserId(cartDto.getUserId());
-		cartRepo.save(cart);
+		Optional<CartEntity> existingCart = cartRepo.findByUserId(cartDto.getUserId());
+		if (existingCart.isPresent()) {
+			throw new RuntimeException("User already has a cart, Cart Id : " +existingCart.get().getCartId());
+		}else {
+			CartEntity cart = new CartEntity();
+			cart.setUserId(cartDto.getUserId());
+			cartRepo.save(cart);
+			CartDtoResponse cartResponse = new CartDtoResponse();
+			cartResponse.setResponse("Cart Id: " + cart.getCartId());
+			cartResponse.setCartId(cart.getCartId());
+			return cartResponse;
+		}
 		
-		CartDtoResponse cartResponse = new CartDtoResponse();
-		cartResponse.setCartId(cart.getCartId());
-		cartResponse.setResponse(" Cart Id :" + cart.getCartId());
-		return cartResponse;
-		
+
 	}
 
 	@Override
@@ -49,11 +58,11 @@ public class Cartserviceimpl implements CartService {
 		product.setProductid(productDto.getProductId());
 		product.setQuantity(productDto.getQuantity());
 		productRepo.save(product);
-		
-		double totalPrice = cart.getTotalPrice()+(productDto.getPrice()* productDto.getQuantity());
+
+		double totalPrice = cart.getTotalPrice() + (productDto.getPrice() * productDto.getQuantity());
 		cart.setTotalPrice(totalPrice);
 		cartRepo.save(cart);
-		
+
 		ProductResponseDto productResponse = new ProductResponseDto();
 		productResponse.setProductId(product.getProductid());
 		productResponse.setPrice(product.getPrice());
@@ -64,34 +73,31 @@ public class Cartserviceimpl implements CartService {
 	@Override
 
 	public void deleteCart(Long cartId) {
-	    CartEntity cart = cartRepo.findById(cartId)
-	            .orElseThrow(() -> new RuntimeException("Cart not found"));
-	    // Delete associated products or update their references
-	    cartRepo.deleteById(cartId);
+		CartEntity cart = cartRepo.findById(cartId).orElseThrow(() -> new RuntimeException("Cart not found"));
+		// Delete associated products or update their references
+		cartRepo.deleteById(cartId);
 
 	}
-	
+
 	@Override
 	public List<ProductEntity> getAllProductsByCartId(Long cartId) {
 		List<ProductEntity> requests = productRepo.findAllProductEntityByCartEntity_cartId(cartId);
 		return requests;
 	}
-	
-	
-	
-	
-	
-	
-		
+
+	@Override
+	public void deleteProduct(DeleteProductDto deleteProductDto) {
+
+		ProductEntity product = productRepo.findById(deleteProductDto.getProductId())
+				.orElseThrow(() -> new RuntimeException("Product not found"));
+		CartEntity cart = cartRepo.findById(deleteProductDto.getCartId())
+				.orElseThrow(() -> new RuntimeException("cart not found"));
+		productRepo.deleteById(deleteProductDto.getProductId());
+
+		double totalPrice = cart.getTotalPrice() - (product.getPrice() * product.getQuantity());
+		cart.setTotalPrice(totalPrice);
+		cartRepo.save(cart);
+
+	}
+
 }
-	
-
-
-	
-	
-	
-
-
-
-
-

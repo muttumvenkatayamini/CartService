@@ -11,9 +11,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+/**
+ * 
+ * @author muttum.venkatayamini
+ *
+ */
 import com.cartServicet.demo.CartDto.CartDtoResponse;
 import com.cartServicet.demo.CartDto.Cartdto;
+import com.cartServicet.demo.CartDto.DeleteProductDto;
 import com.cartServicet.demo.CartDto.FetchCartDto;
 import com.cartServicet.demo.CartDto.ProductDto;
 import com.cartServicet.demo.CartDto.ProductResponseDto;
@@ -24,8 +29,6 @@ import com.cartServicet.demo.Service.CartService;
 
 @RestController
 @RequestMapping("/cart")
-
-
 public class CartController {
 	@Autowired
 	private CartService cartService;
@@ -65,6 +68,24 @@ public class CartController {
         } catch (RuntimeException e) {
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cart not found");
+
+        }
+
+    }
+	
+	@DeleteMapping("/delete/productId")
+
+    public ResponseEntity<String> deleteCart(@RequestBody DeleteProductDto deleteProductDto) {
+
+        try {
+
+            cartService.deleteProduct(deleteProductDto);
+
+            return ResponseEntity.ok("Product deleted successfully");
+
+        } catch (RuntimeException e) {
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
 
         }
 
